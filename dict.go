@@ -9,6 +9,9 @@ import (
 	"os"
 	"path"
 	"strings"
+	"time"
+	"reflect"
+	"runtime"
 )
 
 type Word struct {
@@ -127,7 +130,7 @@ func initCacheDir() string {
 	return cacheDir
 }
 
-// OK -> DOC
+// renderTemplate renders the main template.
 func renderTemplate(w http.ResponseWriter, app *AppContext) {
 	err := app.Template.Execute(w, app)
 	if err != nil {
@@ -136,13 +139,31 @@ func renderTemplate(w http.ResponseWriter, app *AppContext) {
 	}
 }
 
-// OK -> DOC
+// handleWithRateLimit wraps handler with a rate limiter.
+// The rate is limited to one request per second.
+func handleWithRateLimit(handler func(_ http.ResponseWriter, _ *http.Request)) func(_ http.ResponseWriter, _ *http.Request) {
+	limiter := time.Tick(time.Second)
+	return func(w http.ResponseWriter, r *http.Request) {
+		select {
+		case <-limiter:
+			handler(w, r)
+		default:
+			// Ain't nothing like a bit of runtime reflection of function pointers!
+			h := runtime.FuncForPC(reflect.ValueOf(handler).Pointer()).Name()
+			log.Printf("%s: rate limit exceeded", h)
+		}
+	}
+}
+
+// handleRoot handles requests to "/".
 func handleRoot(tmpl *template.Template) func(_ http.ResponseWriter, _ *http.Request) {
 	return func(w http.ResponseWriter, req *http.Request) {
 		renderTemplate(w, &AppContext{Template: tmpl})
 	}
 }
 
+// handleSearch handles requests to "/search".
+// It takes the word to search for from the "word" query argument.
 func handleSearch(tmpl *template.Template, cacheDir string) func(_ http.ResponseWriter, _ *http.Request) {
 	return func(w http.ResponseWriter, req *http.Request) {
 		word := req.FormValue("word")
@@ -188,8 +209,8 @@ func main() {
 	log.Default().SetFlags(log.Ldate | log.Lmicroseconds | log.Lshortfile)
 	templates := template.Must(template.ParseFiles("templates/main.tmpl"))
 	cacheDir := initCacheDir()
-	http.HandleFunc("/", handleRoot(templates))
-	http.HandleFunc("/search", handleSearch(templates, cacheDir))
-	http.HandleFunc("/static/", handleStatic)
+	http.HandleFunc("/", handleWithRateLimit(handleRoot(templates)))
+	http.HandleFunc("/search", handleWithRateLimit(handleSearch(templates, cacheDir)))
+	http.HandleFunc("/static/", handleWithRateLimit(handleStatic))
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
