@@ -1,0 +1,44 @@
+#content {
+    width: 720px;
+    margin: auto;
+}
+
+#search {
+    background-color: #ffe8cc;
+    border: 2px solid #ff922b;
+    border-radius: 7px;
+    padding: 10px;
+}
+
+form>input {
+    font-size: 16pt;
+}
+
+#w {
+    width: 90%;
+}
+
+.word {
+    /*color: powderblue;*/
+    background-color: #f8f9fa;
+    border: 1px solid black;
+    border-radius: 10px;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+
+.word-section {
+    color: #868e96;
+    font-weight: bold;
+}
+
+.word-audio {
+    float: right;
+}
+
+#footer {
+    color: #868e96;
+    font-size: 8pt;
+    text-align: right;
+    margin-top: 10px;
+}

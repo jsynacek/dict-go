@@ -1,0 +1,49 @@
+<html>
+  <head>
+    <title>Godict</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/static/dict.css" rel="stylesheet">
+  </head>
+  <body>
+    <div id="content">
+      <form id="search" action="search">
+        <input type="text" id="w" name="word" placeholder="Search for a word...">
+        <input type="submit" value="🔍">
+      </form>
+      {{if eq .Error nil}}
+      {{range .Words}}
+      <div class="word">
+        <b>{{.Word}}</b>
+        {{with $ph:=.Phonetics}}
+        {{(index $ph 0).Text}}
+        {{with $audio:=(index $ph 0).Audio}}
+        <div class="word-audio">
+          <audio controls>
+            <source src="{{$audio}}" type="audio/mpeg">
+          </audio>
+        </div>
+        {{end}}
+        {{end}}
+        <p class="word-section">meanings</p>
+          <ul>
+            {{range .Meanings}}
+            <li>{{.PartOfSpeech}}
+              <ul>
+                {{range .Definitions}}<li>{{.}}</li>{{end}}
+              </ul>
+            </li>
+            {{end}}
+          </ul>
+      </div>
+      {{end}}
+      {{else}} <!-- if eq .Error nil -->
+      <h4>{{.Error.Title}}</h4>
+      {{.Error.Message}}
+      {{end}}
+      <div id="footer">
+        Powered by https://dictionaryapi.dev.
+      </div>
+    </div>
+  </body>
+</html>
